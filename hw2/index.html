@@ -1,116 +1,537 @@
-<html>
-	<head>
-		<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-		<style>
-			h1 {
-				text-align: center;
-			}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CS184/284A Spring 2025 Homework 2 Write-Up</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2, h3, h4 {
+            text-align: center;
+        }
+        .container {
+            margin: 0 auto;
+            padding: 60px 20%;
+            line-height: 1.6;
+        }
+        figure {
+            text-align: center;
+            margin: 20px 0;
+        }
+        img {
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            text-align: center;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        td {
+            text-align: center;
+            padding: 10px;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .formula {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
 
-			.container {
-				margin: 0 auto;
-				padding: 60px 20%;
-			}
+    <h1>CS184/284A Spring 2025 Homework 2 Write-Up</h1>
+    <div style="text-align: center;">Name: Mark MacDermott</div>
+    <br>
+    <div style="text-align: center;">
+        Link to webpage: <a href="https://ranototaudio.github.io/184-hw/">HW Writeups</a><br>
+        Link to GitHub repository: <a href="https://github.com/RanototAudio">ranototaudio</a>
+    </div>
 
-			figure {
-				text-align: center;
-			}
+    <figure>
+        <img src="def.jpg" alt="rano" style="width:50%"/>
+    </figure>
 
-			img {
-				display: inline-block;
-			}
+    <h2>Overview</h2>
+    <p>
+        This homework involved implementing Bézier curves and surfaces using the De Casteljau algorithm,
+        and performing mesh operations such as computing vertex normals, edge flips, edge splits, and Loop subdivision.
+        It provided hands-on experience in both geometric interpolation and half-edge data structure manipulation.
+    </p>
 
-			body {
-				font-family: 'Inter', sans-serif;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="container">
-		<h1>CS184/284A Spring 2025 Homework 2 Write-Up</h1>
-		<div style="text-align: center;">Names: </div>
+    <h2>Section I: Bézier Curves and Surfaces</h2>
 
-		<br>
+    <h3>Part 1: De Casteljau Algorithm</h3>
+    <p>
+        The De Casteljau algorithm provides a recursive method to evaluate a point on a Bézier curve 
+        given a set of control points and a parameter <code>t</code> where <code>t ∈ [0,1]</code>. 
+        It works by linearly interpolating between control points until a single point is obtained.
+    </p>
 
-		Link to webpage: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+    <h4>Input Parameters</h4>
+    <ul>
+        <li><strong>Control points:</strong> \(P_0, P_1, \dots, P_n\)</li>
+        <li><strong>Parameter:</strong> \(t \in [0,1]\)</li>
+        <li><strong>Order:</strong> \(n\) (degree of the Bézier curve)</li>
+    </ul>
 
-		<br>
-		
-		Link to GitHub repository: (TODO) <a href="https://cs184.eecs.berkeley.edu/sp25">cs184.eecs.berkeley.edu/sp25</a>
+    <h4>Recursive Formula</h4>
+    <p class="formula">
+        \[
+        P_i^{(0)} = P_i \\
+        P_i^{(r)}(t) = (1 - t)P_i^{(r-1)}(t) + tP_{i+1}^{(r-1)}(t) \\
+        B(t) = P_0^{(n)}(t)
+        \]
+    </p>
 
-		<figure>
-			<img src="teapot.png" alt="Teapot" style="width:50%"/>
-			<figcaption>You can add images with captions!</figcaption>
-		</figure>
+    <h4>Algorithm Outline</h4>
+    <ol>
+        <li>Initialize \(P_i^{(0)} = P_i\).</li>
+        <li>For \(r = 1\dots n\), compute \(P_i^{(r)}\) recursively.</li>
+        <li>Output \(P_0^{(n)}(t)\).</li>
+    </ol>
 
-		<!--
-		We've already added one heading per part, to make your write-up as navigable when grading. Please fit your write-up within these sections!
-		-->
+    <p>
+        Here is an example 2x2 gridlike structure using an HTML table.
+    </p>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <table>
+            <tr>
+                <td><img src="0.png" width="300px"/><figcaption>step 0: initial points</figcaption></td>
+                <td><img src="1.png" width="300px"/><figcaption>step 1</figcaption></td>
+            </tr>
+            <tr>
+                <td><img src="2.png" width="300px"/><figcaption>step 2</figcaption></td>
+                <td><img src="3.png" width="300px"/><figcaption>step 3</figcaption></td>
+            </tr>
+            <tr>
+              <td><img src="4.png" width="300px"/><figcaption>step 4</figcaption></td>
+              <td><img src="5.png" width="300px"/><figcaption>step 5</figcaption></td>
+            </tr>
+            <tr>
+              <td><img src="6.png" width="300px"/><figcaption>step 6: final curve</figcaption></td>
+              <td><img src="6 mod t.png" width="300px"/><figcaption>step 6: alternate t</figcaption></td>
+            </tr>
+        </table>
+    </div>
 
-		<h2>Overview</h2>
-		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
+    <h3>Part 2: Bézier Surfaces with Separable 1D De Casteljau</h3>
+    <p>
+        The algorithm evaluates a point on a Bézier surface at \((u, v)\) using the tensor-product approach:
+        first interpolate along \(u\) for each row, then interpolate those results along \(v\).
+    </p>
 
-		<h2>Section I: Bezier Curves and Surfaces</h2>
+    <h4>Algorithm Steps</h4>
+    <ol>
+        <li>
+            For each row of control points:
+            <div class="formula">\[ Q_i(u) = \text{DeCasteljau}(P_{i,0},\dots,P_{i,m};u) \]</div>
+        </li>
+        <li>Collect \(Q_0(u),\dots,Q_n(u)\).</li>
+        <li>
+            Apply De Casteljau again along \(v\):
+            <div class="formula">\[ S(u,v) = \text{DeCasteljau}(Q_0(u),\dots,Q_n(u);v) \]</div>
+        </li>
+    </ol>
 
-		<h3>Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    <h4>Code</h4>
+    <pre><code>
+Vector3D BezierPatch::evaluate(double u, double v) const {
+    std::vector&lt;Vector3D&gt; rowpoints(controlPoints.size());
+    for (int i = 0; i &lt; controlPoints.size(); i++) {
+        rowpoints[i] = evaluate1D(controlPoints[i], u);
+    }
+    return evaluate1D(rowpoints, v);
+}
+    </code></pre>
 
-		<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table style="width: 100%; text-align: center; border-collapse: collapse;">
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			  <tr>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-				<td style="text-align: center;">
-				  <img src="teapot.png" width="400px"/>
-				  <figcaption>Caption goes here.</figcaption>
-				</td>
-			  </tr>
-			</table>
-		</div>
+    <ul>
+        <li><code>evaluate1D(points,t)</code>: runs De Casteljau on a 1D control-point set.</li>
+        <li><code>rowpoints[i]</code>: \(Q_i(u)\).</li>
+        <li>Final \(S(u,v)\) is returned.</li>
+    </ul>
 
-		<h3>Part 2: Bezier surfaces with separable 1D de Casteljau</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    <td><img src="task1.2.png" width="300px"/><figcaption>teapot evaluated using belzier surfaces</figcaption></td>
 
-		<h2>Section II: Triangle Meshes and Half-Edge Data Structure</h2>
+    <h2>Section II: Triangle Meshes and Half-Edge Data Structure</h2>
 
-		<h3>Part 3: Area-weighted vertex normals</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    <h3>Part 3: Area-Weighted Vertex Normals</h3>
+    <p>
+        This function computes an approximate unit normal at a vertex by taking the area-weighted average of 
+        all adjacent triangle normals. The cross product of two edges of a triangle gives a vector proportional to 
+        \(A_f n_f\), where \(A_f\) is the face area and \(n_f\) its unit normal. Summing these vectors and normalizing
+        yields a smooth shading normal.
+    </p>
 
-		<h3>Part 4: Edge flip</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    <p class="formula">
+\[
+N_v = \frac{\displaystyle \sum_{f \in \mathrm{adj}(v)} A_f \, n_f}
+{\left\| \displaystyle \sum_{f \in \mathrm{adj}(v)} A_f \, n_f \right\|}
+\]
 
-		<h3>Part 5: Edge split</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
-		<h3>Part 6: Loop subdivision for mesh upsampling</h3>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    </p>
 
-		<h2>(Optional) Section III: Potential Extra Credit - Art Competition: Model something Creative</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    <pre><code>
+Vector3D Vertex::normal(void) const {
+    HalfedgeCIter h = halfedge();
+    HalfedgeCIter start = h;
+    Vector3D point1 = this-&gt;position;
+    Vector3D N(0,0,0);
 
-		<h2>Additional Notes (please remove)</h2>
-		<ul>
-			<li>You can also add code if you'd like as so: <code>code code code</code></li>
-			<li>If you'd like to add math equations, 
-				<ul>
-					<li>You can write inline equations like so: \( a^2 + b^2 = c^2 \)</li>
-					<li>You can write display equations like so: \[ a^2 + b^2 = c^2 \]</li>
-				</ul>
-			</li>
-		</ul>
-		</div>
-	</body>
+    do {
+        Vector3D point2 = h-&gt;next()-&gt;vertex()-&gt;position;
+        Vector3D edge1 = point2 - point1;
+        Vector3D point3 = h-&gt;next()-&gt;next()-&gt;vertex()-&gt;position;
+        Vector3D edge2 = point3 - point1;
+
+        Vector3D norm = cross(edge1, edge2);
+        N += norm;
+        h = h-&gt;twin()-&gt;next();
+    } while (h != start);
+
+    return N.unit();
+}
+    </code></pre>
+
+    <h4>Step-by-Step Execution</h4>
+    <ol>
+        <li>Initialize \(N=(0,0,0)\) and store vertex position \(p\).</li>
+        <li>Iterate over all faces in the one-ring using <code>h = h->twin()->next()</code>.</li>
+        <li>Compute edges \(e_1 = p_2 - p\), \(e_2 = p_3 - p\).</li>
+        <li>Cross product gives area-weighted face normal: \(n_f^{weighted} = e_1 \times e_2\).</li>
+        <li>Accumulate into \(N\).</li>
+        <li>Normalize \(N\) to get unit normal.</li>
+    </ol>
+
+    <td><img src="task2.1 smooth.png" width="300px"/><figcaption>phong shading</figcaption></td>
+    <td><img src="task2.1.png" width="300px"/><figcaption>flat</figcaption></td>
+
+
+    <h3>Part 4: Edge Flip</h3>
+    <p>
+        Edge flip replaces the shared edge of two adjacent triangles with the other diagonal, improving mesh regularity or valence distribution.
+    </p>
+
+    <h4>Initial Configuration</h4>
+    <p>
+        Two adjacent triangles share edge \(b\leftrightarrow c\):
+    </p>
+    <ul>
+        <li>\(\triangle a b c\)</li>
+        <li>\(\triangle c b d\)</li>
+    </ul>
+    <p>After flipping, shared edge becomes \(a\leftrightarrow d\).</p>
+
+    <h4>Code</h4>
+    <pre><code>
+EdgeIter HalfedgeMesh::flipEdge(EdgeIter e0) {
+    if (e0-&gt;isBoundary()) return e0;
+
+    HalfedgeIter ad = e0-&gt;halfedge();
+    HalfedgeIter da = ad-&gt;twin();
+    HalfedgeIter ab = ad-&gt;next();
+    HalfedgeIter ca = ab-&gt;next();
+    HalfedgeIter cd = da-&gt;next();
+    HalfedgeIter db = cd-&gt;next();
+
+    VertexIter b = ad-&gt;vertex();
+    VertexIter c = da-&gt;vertex();
+    VertexIter a = ca-&gt;vertex();
+    VertexIter d = db-&gt;vertex();
+
+    ad-&gt;vertex() = a;
+    da-&gt;vertex() = d;
+
+    FaceIter left = ad-&gt;face();
+    FaceIter right = da-&gt;face();
+
+    b-&gt;halfedge() = db;
+    c-&gt;halfedge() = ca;
+    a-&gt;halfedge() = ad;
+    d-&gt;halfedge() = da;
+
+    ca-&gt;next() = cd;
+    cd-&gt;next() = da;
+    da-&gt;next() = ca;
+
+    ab-&gt;next() = ad;
+    ad-&gt;next() = db;
+    db-&gt;next() = ab;
+
+    ad-&gt;face() = left;
+    db-&gt;face() = left;
+    ab-&gt;face() = left;
+
+    da-&gt;face() = right;
+    ca-&gt;face() = right;
+    cd-&gt;face() = right;
+
+    left-&gt;halfedge() = ad;
+    right-&gt;halfedge() = da;
+
+    ad-&gt;twin() = da;
+    da-&gt;twin() = ad;
+
+    return e0;
+}
+    </code></pre>
+
+    <h4>Explanation</h4>
+    <ol>
+        <li>Check boundary (skip if true).</li>
+        <li>Cache halfedges and vertices.</li>
+        <li>Reassign main edge to connect \(a\) and \(d\).</li>
+        <li>Update vertex halfedge pointers.</li>
+        <li>Fix <code>next()</code> cycles to represent new triangles.</li>
+        <li>Reassign face pointers for affected halfedges.</li>
+        <li>Return flipped edge iterator.</li>
+    </ol>
+
+        <table>
+            <tr>
+                <td><img src="part4 preflip.png" width="300px"/><figcaption>init state</figcaption></td>
+                <td><img src="part4 postflip.png" width="300px"/><figcaption>arbitrary flips</figcaption></td>
+            </tr>
+        </table>
+
+    <h3>Part 5: Edge Split</h3>
+    <p>
+        Edge splitting inserts a midpoint vertex \(v_4\) on edge \(e_0\), subdividing two adjacent triangles into four.
+    </p>
+
+    <h4>Mathematical Rule</h4>
+    <p class="formula">
+        \[
+        v_4 = \frac{v_0 + v_1}{2}
+        \]
+    </p>
+
+    <h4>Code</h4>
+    <pre><code>
+VertexIter HalfedgeMesh::splitEdge(EdgeIter e0) {
+    HalfedgeIter h0 = e0-&gt;halfedge();
+    HalfedgeIter h1 = h0-&gt;next();
+    HalfedgeIter h2 = h1-&gt;next();
+    HalfedgeIter h3 = h0-&gt;twin();
+    HalfedgeIter h4 = h3-&gt;next();
+    HalfedgeIter h5 = h4-&gt;next();
+    HalfedgeIter h6 = h1-&gt;twin();
+    HalfedgeIter h7 = h2-&gt;twin();
+    HalfedgeIter h8 = h4-&gt;twin();
+    HalfedgeIter h9 = h5-&gt;twin();
+
+    VertexIter v0 = h0-&gt;vertex();
+    VertexIter v1 = h3-&gt;vertex();
+    VertexIter v2 = h2-&gt;vertex();
+    VertexIter v3 = h5-&gt;vertex();
+
+    EdgeIter e1 = h1-&gt;edge();
+    EdgeIter e2 = h2-&gt;edge();
+    EdgeIter e3 = h4-&gt;edge();
+    EdgeIter e4 = h5-&gt;edge();
+
+    FaceIter f0 = h0-&gt;face();
+    FaceIter f1 = h3-&gt;face();
+
+    HalfedgeIter h10 = newHalfedge();
+    HalfedgeIter h11 = newHalfedge();
+    HalfedgeIter h12 = newHalfedge();
+    HalfedgeIter h13 = newHalfedge();
+    HalfedgeIter h14 = newHalfedge();
+    HalfedgeIter h15 = newHalfedge();
+
+    VertexIter v4 = newVertex();
+    v4-&gt;position = (v0-&gt;position + v1-&gt;position) / 2;
+    v4-&gt;isNew = true;
+
+    EdgeIter e5 = newEdge();
+    EdgeIter e6 = newEdge();
+    EdgeIter e7 = newEdge();
+    e5-&gt;isNew = true;
+    e6-&gt;isNew = true;
+    e7-&gt;isNew = false;
+
+    FaceIter f2 = newFace();
+    FaceIter f3 = newFace();
+
+    h0-&gt;setNeighbors(h11, h3, v0, e0, f0);
+    h1-&gt;setNeighbors(h14, h6, v1, e1, f3);
+    h2-&gt;setNeighbors(h0, h7, v2, e2, f0);
+    h3-&gt;setNeighbors(h4, h0, v4, e0, f1);
+    h4-&gt;setNeighbors(h10, h8, v0, e3, f1);
+    h5-&gt;setNeighbors(h15, h9, v3, e4, f2);
+
+    h6-&gt;setNeighbors(h6-&gt;next(), h1, v2, e1, h6-&gt;face());
+    h7-&gt;setNeighbors(h7-&gt;next(), h2, v0, e2, h7-&gt;face());
+    h8-&gt;setNeighbors(h8-&gt;next(), h4, v3, e3, h8-&gt;face());
+    h9-&gt;setNeighbors(h9-&gt;next(), h5, v1, e4, h9-&gt;face());
+
+    h10-&gt;setNeighbors(h3, h13, v3, e5, f1);
+    h11-&gt;setNeighbors(h2, h14, v4, e6, f0);
+    h12-&gt;setNeighbors(h1, h15, v4, e7, f3);
+    h13-&gt;setNeighbors(h5, h10, v4, e5, f2);
+    h14-&gt;setNeighbors(h12, h11, v2, e6, f3);
+    h15-&gt;setNeighbors(h13, h12, v1, e7, f2);
+
+    v0-&gt;halfedge() = h0;
+    v1-&gt;halfedge() = h1;
+    v2-&gt;halfedge() = h2;
+    v3-&gt;halfedge() = h5;
+    v4-&gt;halfedge() = h3;
+
+    e0-&gt;halfedge() = h0;
+    e1-&gt;halfedge() = h1;
+    e2-&gt;halfedge() = h2;
+    e3-&gt;halfedge() = h4;
+    e4-&gt;halfedge() = h5;
+    e5-&gt;halfedge() = h10;
+    e6-&gt;halfedge() = h11;
+    e7-&gt;halfedge() = h12;
+
+    f0-&gt;halfedge() = h0;
+    f1-&gt;halfedge() = h3;
+    f2-&gt;halfedge() = h13;
+    f3-&gt;halfedge() = h12;
+
+    return v4;
+}
+    </code></pre>
+
+    <h4>Explanation</h4>
+    <ol>
+        <li>Cache original halfedges, vertices, edges, and faces.</li>
+        <li>Create six new halfedges, three edges, two faces, and the new vertex \(v_4\).</li>
+        <li>Set neighbors for both old and new halfedges to form four triangles.</li>
+        <li>Assign representative halfedges to vertices, edges, and faces.</li>
+        <li>Return \(v_4\).</li>
+    </ol>
+
+    <table>
+    <tr>
+        <td><img src="part4 preflip.png" width="300px"/><figcaption>init</figcaption></td>
+        <td><img src="part5 flips splits.png" width="300px"/><figcaption>arbitrary flips/splits</figcaption></td>
+    </tr>
+  </table>
+
+    <h3>Part 6: Loop Subdivision for Mesh Upsampling</h3>
+    <p>
+        Loop subdivision refines a triangular mesh to produce a smoother surface by:
+        computing new vertex positions, splitting edges, and flipping edges to improve valence regularity.
+        After one iteration, the mesh has ~4× more triangles and a smoother appearance.
+    </p>
+
+    <h4>Overview of Steps</h4>
+    <ol>
+        <li>Compute new positions for original vertices (Loop vertex rule).</li>
+        <li>Compute new positions for edge midpoints (Loop edge rule).</li>
+        <li>Split all original edges, inserting new vertices.</li>
+        <li>Flip edges connecting a new and old vertex to maintain mesh regularity.</li>
+        <li>Update all vertex positions to their computed new positions.</li>
+    </ol>
+
+    <h4>1. Update Original Vertex Positions</h4>
+    <p>
+        For an original vertex \(v\) with degree \(n\), the new position is:
+    </p>
+    <p class="formula">
+        \[
+        v' = (1 - n\beta)v + \beta \sum_{i=1}^n v_i
+        \]
+    </p>
+    <ul>
+        <li>\(v\): original vertex position</li>
+        <li>\(v_i\): neighboring vertices</li>
+        <li>\(\beta = \begin{cases}
+            \frac{3}{16} & n = 3 \\
+            \frac{3}{8n} & n > 3
+        \end{cases}\)</li>
+    </ul>
+    <p>
+        Each vertex is marked <code>isNew = false</code>, and the result is stored in <code>newPosition</code>.
+    </p>
+
+    <h4>2. Update Edge Midpoint Positions</h4>
+    <p>
+        For an edge with vertices \(v_0, v_1\) and opposite vertices \(u, w\):
+    </p>
+    <p class="formula">
+        \[
+        e' = \frac{3}{8}(v_0 + v_1) + \frac{1}{8}(u + w)
+        \]
+    </p>
+    <p>
+        This is stored in <code>Edge::newPosition</code>, and edges are marked <code>isNew = false</code>.
+    </p>
+
+    <h4>3. Split Original Edges</h4>
+    <p>
+        Only edges of the original mesh are split:
+    </p>
+    <ul>
+        <li>The midpoint vertex \(m\) is created by <code>mesh.splitEdge(e)</code>.</li>
+        <li><code>m->isNew = true</code>, <code>m->newPosition = e->newPosition</code>.</li>
+    </ul>
+    <p>
+        Each triangle is subdivided into four smaller ones.
+    </p>
+
+    <h4>4. Flip Edges</h4>
+    <p>
+        To maintain mesh regularity, new edges that connect one new and one old vertex are flipped:
+    </p>
+    <pre><code>
+if (e->isNew && (v0->isNew != v1->isNew)) {
+    mesh.flipEdge(e);
+}
+    </code></pre>
+
+    <h4>5. Update Final Positions</h4>
+    <p>
+        After all splits and flips, update all vertex positions:
+    </p>
+    <pre><code>
+v->position = v->newPosition;
+    </code></pre>
+
+    <h4>Result</h4>
+    <p>
+        After these steps, the mesh is denser and smoother, closely approximating a high-resolution surface according to Loop subdivision rules.
+    </p>
+
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <table>
+            <tr>
+                <td><img src="0.png" width="300px"/><figcaption>step 0: initial points</figcaption></td>
+                <td><img src="1.png" width="300px"/><figcaption>step 1</figcaption></td>
+            </tr>
+            <tr>
+                <td><img src="2.png" width="300px"/><figcaption>step 2</figcaption></td>
+                <td><img src="3.png" width="300px"/><figcaption>step 3</figcaption></td>
+            </tr>
+            <tr>
+              <td><img src="4.png" width="300px"/><figcaption>step 4</figcaption></td>
+              <td><img src="5.png" width="300px"/><figcaption>step 5</figcaption></td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+</body>
 </html>
