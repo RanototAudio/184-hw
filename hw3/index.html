@@ -28,7 +28,7 @@
 	<body>
 		<div class="container">
 		    <h1>CS184/284A Spring 2025 Homework 3 Write-Up</h1>
-    <div style="text-align: center;">Name: Mark MacDermott</div>
+    <div style="text-align: center;">Names: Mark MacDermott, Seongsoo Park</div>
     <br>
     <div style="text-align: center;">
         Link to webpage: <a href="https://ranototaudio.github.io/184-hw/">HW Writeups</a><br>
@@ -394,10 +394,257 @@
 
 		
 		<h2>Part 2: Bounding Volume Hierarchy</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+		<p>In Task 2.1, I constructed a Bounding Volume Hierarchy (BVH). The BVH is an object partition that divides objects into sets in a binary tree structure. The purpose of the BVH is to reduce the number of object-ray tests, thereby making rendering faster.</p>
+
+		<p>The structure of the BVH is as follows:
+			<ul>
+				<li>A leaf node of the tree consists of objects with the number no more than <code>max_leaf_size</code>.</li>
+				<li>During tree construction, in an internal node, the set of objects is divided into two subsets using a appropriate heuristic, and for each subset a BVH tree is constructed recursively, then they are connected to the original internal node as children.</li>
+			</ul>
+		</p>
+
+		<p>The heuristic I chose for the split is: get the centroid of the entire bounding box, then divide it into two subsets, "left" and "right", based on the centroid of the bounding box of each object, comparing according to coordinates of an axis. The dividing process is performed for each of the three axes, \(x\)-, \(y\)-, and \(z\)-axis, and the most evenly divided result according to one of the axes is adopted. Meanwhile, I handled one exceptional situation: if all objects end up in one subset, then send any one object to the other subset.</p>
+
+		<p>In Task 2.2, I implmented the ray - bounding box intersection test. The test consists of the following steps: For each of the three axes of the bounding box, the time it takes for a ray to pass through the start and end points of the bounding box on that axis is calculated as an interval, and then the intersection of the intervals is calculated.</p>
+
+		<p>For the \(x\)-axis, let \(p_{x0}\) the minimum \(x\)-coordinate of the bounding box, and \(p_{x1}\) the maximum. The calculation of the entry time \(t_{x0}\) and the exit time \(t_{x1}\) depends on the sign of \(d_x\):
+			<ul>
+				<li>If \(d_x &gt; 0\), then \(t_{x0} = (p_{x0} - o_x)/d_x\) and \(t_{x1} = (p_{x1} - o_x)/d_x\).</li>
+				<li>If \(d_x &lt; 0\), then \(t_{x0} = (p_{x1} - o_x)/d_x\) and \(t_{x1} = (p_{x0} - o_x)/d_x\).</li>
+				<li>If \(d_x = 0\), the ray is parallel to the bounding box, and the condition depends on \(o_x\): if \(o_x \in [p_{x0}, p_{x1}] \), then the ray is always within the bounding box with regard to \(x\)-axis; otherwise, the ray and the bounding box do not meet at all.</li>
+			</ul>
+		</p>
+
+		<p>The same calculations are performed for the \(y\)-axis and \(z\)-axis, and the intersection of the resulting intervals is calculated as below. For the ray from time \(t_0\) to time \(t_1\), the final intersection interval is \([t_{0}', t_{1}']\) where</p>
+		\[
+		t_{0}' = \max(t_{0}, t_{x0}, t_{y0}, t_{z0}) \\
+		t_{1}' = \min(t_{1}, t_{x0}, t_{y0}, t_{z0})
+		\]
+
+		<p>If the result is an empty interval, then the ray and the bounding box do not intersect. To check for the empty interval, check if \(t_{0}' &gt; t_{1}'\).</p>
+
+		<p>The code below shows the process of the ray - bounding box intersection test:</p>
+
+		<pre><code>
+double t0_true = t0, t1_true = t1;
+for (int i = 0; i < 3; i++) {
+  if (r.d[i] > 0) {
+    t0_true = std::max(t0_true, (this->min[i] - r.o[i]) / r.d[i]);
+    t1_true = std::min(t1_true, (this->max[i] - r.o[i]) / r.d[i]);
+  }
+  else if (r.d[i] < 0) {
+    t0_true = std::max(t0_true, (this->max[i] - r.o[i]) / r.d[i]);
+    t1_true = std::min(t1_true, (this->min[i] - r.o[i]) / r.d[i]);
+  }
+  else {
+    // parallel cases
+    if (this->min[i] <= r.o[i] && r.o[i] <= this->max[i]) {
+      // the ray passes through the box
+    }
+    else {
+      // does not meet
+      return false;
+    }
+  }
+}
+
+if (t0_true > t1_true) {
+  return false;
+}
+
+t0 = t0_true;
+t1 = t1_true;
+return true;
+		</code></pre>
+
+		<p>In Task 2.3, I implmented the BVH acceleration algorithm for intersection. The following code demonstrates using BVH acceleration to perform an intersection test. The test recursively traverses the BVH tree. If the bounding box of the node and the ray do not intersect, this node can be pruned immediately during the tree traversal. This pruning dramatically reduces the number of object tests.</p>
+
+		<pre><code>
+double t0 = ray.min_t;
+double t1 = ray.max_t;
+if (!node->bb.intersect(ray, t0, t1)) {
+	return false;
+}
+
+if (node->isLeaf()) {
+	bool hit = false;
+	for (auto p = node->start; p != node->end; p++) {
+		total_isects++;
+		if ((*p)->intersect(ray, i)) {
+			hit = true;
+		}
+	}
+	return hit;
+}
+
+bool hit1 = intersect(ray, i, node->l);
+bool hit2 = intersect(ray, i, node->r);
+return hit1 || hit2;
+		</code></pre>
+
+		<p>Below are some images rendered with normal shading using BVH acceleration.</p>
+		
+		<figure>
+			<img src="maxplanck.png" style="max-width: 100%; height: auto; width: 400px;">
+			<div class="caption">dae/meshedit/maxplanck.dae</div>
+		</figure>
+		<p>Rendering time: 0.1397s</p>
+		
+		<figure>
+			<img src="CBlucy.png" style="max-width: 100%; height: auto; width: 400px;">
+			<div class="caption">dae/sky/CBlucy.dae</div>
+		</figure>
+		<p>Rendering time: 0.0742s</p>
+
+		<figure>
+			<img src="cow.png" style="max-width: 100%; height: auto; width: 400px;">
+			<div class="caption">dae/meshedit/cow.dae</div>
+		</figure>
+		<p>Here's a rendering of a scene with 5856 primitives. Without BVH acceleration, it was rendered in 31.2538s with average 1081.159519 intersection tests per ray. With the BVH acceleration, it took 0.0800s and average 2.044837 intersection tests per ray. This demonstrates that BVH acceleration enables faster rendering by dramatically reducing the number of intersection tests.</p>
 
 		<h2>Part 3: Direct Illumination</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+		<p>In this part I implemented direct lighting using the one-bounce reflection. The one-bounce reflection traces rays inversely from the camera though surface reflections to the light sources. One-bounce reflections behave differently under uniform hemisphere sampling and importance sampling of lights. Uniform hemisphere sampling samples rays reflected from a surface uniformly in direction over the surface of a unit hemisphere, and the emission at the intersection point of the inverse ray becomes the radiance. On the other hand, importance sampling of lights samples rays from the light sources, and the light for this sample is only casted when there is no obstruction intersecting the ray between the light source and the surface.</p>
+
+		<p>BSDF denotes how much light relative to the incident light is reflected with regard to incident direction and outgoing direction. The diffuse Lambertian BSDF is given as:</p>
+		\[
+		f_r(p, \omega_i, \omega_o) = \frac{\rho}{\pi}
+		\]
+		<p>where \(\rho\) is the reflectance (albedo) of the surface.</p>
+
+		<p>We use BSDF \(f_r\) and the radiance of the incident light \(L_i\) to obtain the outgoing light \(L_o\). The rendering equation is:</p>
+		\[
+		L_o(p, \omega_o) = L_e(p, \omega_o) +
+		\int_{\Omega} f_r(p, \omega_i, \omega_o)\, L_i(p, \omega_i)\, \cos\theta_i \, d\omega_i
+		\]
+
+		<p>For the integral, use the Monte Carlo estimator to calculate it.</p>
+		\[
+		\hat{L}_o(p, \omega_o) =
+		\frac{1}{N} \sum_{i=1}^N
+		\frac{f_r(p, \omega_i, \omega_o)\, L_i(p, \omega_i)\, \cos\theta_i}{p(\omega_i)}
+		\]
+
+		<p>For uniform hemisphere sampling, the pdf is \(p(\omega_i) = 1 / (2\pi)\) for all \(\omega_i\) in the surface of hemisphere, while for lighting sampling it is calculated when sampling from light sources.</p>
+
+		<p>The following code shows the implemention for uniform hemisphere sampling.</p>
+		<pre><code>
+Vector3D L_sum(0, 0, 0);
+
+for (int i = 0; i < num_samples; i++) {
+  Vector3D wj = hemisphereSampler->get_sample(); // direction is outward, object coordinates
+  double pdf = 1.0 / (2.0 * PI);
+  Vector3D fr = isect.bsdf->f(w_out, wj);
+  double costheta = cos_theta(wj);
+
+  Vector3D rayDirection = o2w * wj;
+  Ray r1(hit_p, rayDirection);
+  r1.min_t = EPS_F;
+  Intersection isect1;
+  bool hit = bvh->intersect(r1, &isect1);
+  if (!hit) continue;
+
+  Vector3D Li = isect1.bsdf->get_emission();
+  L_sum += (fr * Li * costheta) / pdf;
+}
+
+L_out = L_sum * (1.0 / num_samples);
+
+return L_out;
+		</code></pre>
+
+		<p>The following code shows the implemention for importance sampling of lights. Noticeable points are:
+			<ul>
+				<li>For point light sources, it samples only once and instead weights the sample.</li>
+				<li>If the ray is intersected between the light source and the surface, the light is blocked and the ray is not casted, leaving the shadow. It checks also whether the ray is unreachable to the surface by checking the sign of <code>costheta</code>.</li>
+			</ul>
+		</p>
+		<pre><code>
+Vector3D L_sum(0, 0, 0);
+size_t total_sampling_count = scene->lights.size() * ns_area_light;
+
+for (auto light: scene->lights) {
+  int sampling_count = light->is_delta_light() ? 1 : ns_area_light;
+  int sampling_weight = light->is_delta_light() ? ns_area_light : 1;
+
+  for (int i = 0; i < sampling_count; i++) {
+    Vector3D wj_w;  // world-space
+    double pdf, distToLight;
+    Vector3D radiance = light->sample_L(hit_p, &wj_w, &distToLight, &pdf);
+
+    Vector3D rayDirection = wj_w;
+
+    Vector3D wj_o = w2o * wj_w;
+    double costheta = cos_theta(wj_o);
+    if (costheta <= 0.0) continue;
+
+    Ray r1(hit_p, rayDirection);
+    r1.min_t = EPS_F;
+    r1.max_t = distToLight - EPS_F;
+    Intersection isect1;
+    bool hit = bvh->intersect(r1, &isect1);
+    if (hit) {
+      continue; // casting the shadow
+    }
+
+    Vector3D fr = isect.bsdf->f(w_out, wj_o);
+    Vector3D Li = radiance; // * (1.0 / (distToLight * distToLight));
+    L_sum += (fr * Li * costheta) / pdf * sampling_weight;
+  }
+}
+
+L_out = L_sum * (1.0 / total_sampling_count);
+
+return L_out;
+		</code></pre>
+
+		<p>The following images show the results of adjusting parameters and choosing between both sampling methods. The adjusted parameters are <code>-s</code> for the number of samples per pixel, and <code>-l</code> for the number of samples per light.</p>
+
+		<div style="display: flex; justify-content: center; gap: 15px;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBbunny_H_16_8.png" alt="Bunny H_16_8" style="width: 100%;">
+			<div class="caption">Uniform Hemisphere Sampling (<code>-s 16 -l 8</code>)</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="bunny_1_1.png" alt="Bunny 1_1" style="width: 100%;">
+			<div class="caption">Lighting Sampling (<code>-s 1 -l 1</code>)</div>
+		</div>
+		</div>
+
+		<div style="display: flex; justify-content: center; gap: 15px;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBbunny_H_64_32.png" alt="Bunny H_64_32" style="width: 100%;">
+			<div class="caption">Uniform Hemisphere Sampling (<code>-s 64 -l 32</code>)</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="bunny_64_32.png" alt="Bunny 64_32" style="width: 100%;">
+			<div class="caption">Lighting Sampling (<code>-s 64 -l 32</code>)</div>
+		</div>
+		</div>
+		
+		<p>The following images were generated using the command <code>./pathtracer -t 8 -s 1 -l [lightrays] -m 1 -f bunny_1_[lightrays].png -r 480 360 ../dae/sky/CBbunny.dae</code>, where <code>[lightrays]</code> is the number of light rays. These images demonstrate the effect the number of light rays on rendering has on noise in the soft shadow areas, when using lighting sampling.</p>
+
+		<div style="display: flex; justify-content: center; gap: 15px;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="bunny_1_1.png" alt="Bunny 1_1" style="width: 100%;">
+			<div class="caption">1 light ray</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="bunny_1_4.png" alt="Bunny 1_4" style="width: 100%;">
+			<div class="caption">4 light rays</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="bunny_1_16.png" alt="Bunny 1_16" style="width: 100%;">
+			<div class="caption">16 light rays</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="bunny_1_64.png" alt="Bunny 1_64" style="width: 100%;">
+			<div class="caption">64 light rays</div>
+		</div>
+		</div>
+
+		<p>Comparing the two sampling methods, uniform hemisphere sampling has more noises, while lighting sampling shows decent performance even with a small number of samples.</p>
 
 		<h2>Part 4: Global Illumination</h2>
 		In this part we are tasked with implementing indirect lighting via Russian Roulette.
