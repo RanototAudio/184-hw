@@ -43,7 +43,7 @@
 		We've already added one heading per part, to make your write-up as navigable when grading. Please fit your write-up within these sections!
 		-->
 
-		<h2>Overview</h2>
+		<h3>Overview</h2>
 		Give a high-level overview of what you implemented in this homework. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the homework.
 
 		<h2>Part 1: Ray Generation and Scene Intersection</h2>
@@ -404,6 +404,7 @@
 		As previously seen in part 3, direct lighting refers to light that travels from a light source to the surface directly without bouncing off any other surface.
 		This was computed via the one_bounce_radiance() function.
 		Indirect lighting is lighting that arrives at a point after bouncing one or more times off surfaces after originating from a light.
+		
 		<table border="1" cellpadding="8" cellspacing="0">
 		<thead>
 			<tr>
@@ -433,11 +434,12 @@
 			<td>Indirectly via paths</td>
 			</tr>
 		</tbody>
+
 		</table>
 		The function at_least_one_bounce_radiance(const Ray& r, const Intersection& isect) implements  recursive light integration for indirect lighting, augmenting it with direct lighting and Russian roulette for termination.
 		The following steps are implemented:
 		
-<ul>
+		<ul>
 		<li>Construct a local coordinate frame at the intersection point using the surface normal</li>
 		<li>Compute the outgoing direction \( w_{\text{out}} \) in local coordinates</li>
 		<li>If <code>isAccumBounces</code> is true, always add direct lighting via <code>one_bounce_radiance()</code>; otherwise, add it only at the final bounce</li>
@@ -456,7 +458,6 @@
 		</li>
 		<li>Return the total radiance <code>L_out</code></li>
 		</ul>
-
 
 		Depending on whether or not isAccumBounces is true, we either integrate light at every bounce or only at max_ray_depth.
 		<pre><code>
@@ -526,7 +527,158 @@
 		if (!coin_flip(continuation)) return L_out;
 		</code></pre>
 
+		<h3>Direct vs Indirect Illumination</h3>
+		<div style="display: flex; justify-content: center; gap: 20px;">
+		<div style="text-align: center; max-width: 300px;">
+			<img src="4 direct only.png" alt="Direct Illumination" style="width: 100%;">
+			<div class="caption">Direct Illumination Only</div>
+		</div>
+		<div style="text-align: center; max-width: 300px;">
+			<img src="4 indirect only.png" alt="Indirect Illumination" style="width: 100%;">
+			<div class="caption">Indirect Illumination Only</div>
+		</div>
+		<div style="text-align: center; max-width: 300px;">
+			<img src="4 global illum bunny.png" alt="Global Illumination" style="width: 100%;">
+			<div class="caption">Global Illumination</div>
+		</div>
+		</div>
 
+		<h3>Unaccumulated Bounces (isAccumBounces = false)</h3>
+		<div style="display: flex; justify-content: center; gap: 15px;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce0.png" alt="Bounce 0" style="width: 100%;">
+			<div class="caption">Bounce 0</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce1.png" alt="Bounce 1" style="width: 100%;">
+			<div class="caption">Bounce 1</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce2.png" alt="Bounce 2" style="width: 100%;">
+			<div class="caption">Bounce 2</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce3.png" alt="Bounce 3" style="width: 100%;">
+			<div class="caption">Bounce 3</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce4.png" alt="Bounce 4" style="width: 100%;">
+			<div class="caption">Bounce 4</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce5.png" alt="Bounce 5" style="width: 100%;">
+			<div class="caption">Bounce 5</div>
+		</div>
+		</div>
+
+		<h3>Accumulated Bounces (isAccumBounces = true)</h3>
+		<div style="display: flex; justify-content: center; gap: 15px;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="unaccum_bounce0.png" alt="Accumulated 0" style="width: 100%;">
+			<div class="caption">Depth 0</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce0.png" alt="Accumulated 1" style="width: 100%;">
+			<div class="caption">Depth 1</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce1.png" alt="Accumulated 2" style="width: 100%;">
+			<div class="caption">Depth 2</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce2.png" alt="Accumulated 3" style="width: 100%;">
+			<div class="caption">Depth 3</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce3.png" alt="Accumulated 4" style="width: 100%;">
+			<div class="caption">Depth 4</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce4.png" alt="Accumulated 5" style="width: 100%;">
+			<div class="caption">Depth 5</div>
+		</div>
+		</div>
+
+		<h3>Russian Roulette Rendering</h3>
+		<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce0.png" alt="RR Depth 0" style="width: 100%;">
+			<div class="caption">Depth 0</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce1.png" alt="RR Depth 1" style="width: 100%;">
+			<div class="caption">Depth 1</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce2.png" alt="RR Depth 2" style="width: 100%;">
+			<div class="caption">Depth 2</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce3.png" alt="RR Depth 3" style="width: 100%;">
+			<div class="caption">Depth 3</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce4.png" alt="RR Depth 4" style="width: 100%;">
+			<div class="caption">Depth 4</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="accum_bounce5.png" alt="RR Depth 100" style="width: 100%;">
+			<div class="caption">Depth 100</div>
+		</div>
+		</div>
+
+		<h3>Sampling Rate Comparison</h3>
+		<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s1.png" alt="1 spp" style="width: 100%;">
+			<div class="caption">1 Sample/Pixel</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s2.png" alt="2 spp" style="width: 100%;">
+			<div class="caption">2 Samples/Pixel</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s4.png" alt="4 spp" style="width: 100%;">
+			<div class="caption">4 Samples/Pixel</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s8.png" alt="8 spp" style="width: 100%;">
+			<div class="caption">8 Samples/Pixel</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s16.png" alt="16 spp" style="width: 100%;">
+			<div class="caption">16 Samples/Pixel</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s64.png" alt="64 spp" style="width: 100%;">
+			<div class="caption">64 Samples/Pixel</div>
+		</div>
+		<div style="text-align: center; max-width: 160px;">
+			<img src="CBspheres_s1024.png" alt="1024 spp" style="width: 100%;">
+			<div class="caption">1024 Samples/Pixel</div>
+		</div>
+		</div>
+
+		<h3>2-Bounce Rendering</h3>
+		<ul>
+		<li>Bright overall due to only one indirect bounce.</li>
+		<li>Strong color bleeding from walls (red and blue) onto the bunny and floor.</li>
+		<li>Shadows begin softening into gradients.</li>
+		</ul>
+
+		<h3>3-Bounce Rendering</h3>
+		<ul>
+		<li>Overall brightness decreases.</li>
+		<li>Color bleeding becomes subtler.</li>
+		<li>Indirect fill light appears in corners and shadowed areas.</li>
+		<li>Increased noise from fewer surviving paths.</li>
+		</ul>
+
+		<h3>Comparison with Rasterization</h3>
+		<p>
+		Rasterization lacks physical global illumination; indirect effects like color bleeding, soft shadows, and ambient fill must be approximated (e.g., SSAO, light maps).<br>
+		Path tracing simulates these accurately through extra bounces.
+		</p>
 
 		<h2>Part 5: Adaptive Sampling</h2>
 		Some pixels in a scene convergence faster or slower during monte carlo light transport integration. This is governed by the variance of the function being integrated.
@@ -661,6 +813,32 @@
 		sampleCountBuffer[x + y * sampleBuffer.w] = n;
 		}
 		</code></pre>
+
+		<h3>Adaptive Sampling Comparison</h3>
+		<div class="image-row" style="display: flex; justify-content: center; gap: 40px;">
+		<div class="image-column" style="text-align: center;">
+			<img src="bunny_adaptive_result.png" alt="Scene 1 Rendered Image" style="width: 400px;">
+			<div class="caption">Scene 1: Final Render (2048 spp)</div>
+		</div>
+		<div class="image-column" style="text-align: center;">
+			<img src="bunny_adaptive_result_rate.png" alt="Scene 1 Sampling Rate Image" style="width: 400px;">
+			<div class="caption">Scene 1: Sampling Rate Visualization</div>
+		</div>
+		</div>
+
+		<br><br>
+
+		<div class="image-row" style="display: flex; justify-content: center; gap: 40px;">
+		<div class="image-column" style="text-align: center;">
+			<img src="spheres_adaptive_result.png" alt="Scene 2 Rendered Image" style="width: 400px;">
+			<div class="caption">Scene 2: Final Render (2048 spp)</div>
+		</div>
+		<div class="image-column" style="text-align: center;">
+			<img src="spheres_adaptive_result_rate.png" alt="Scene 2 Sampling Rate Image" style="width: 400px;">
+			<div class="caption">Scene 2: Sampling Rate Visualization</div>
+		</div>
+		</div>
+	
 
 		</div>
 	</body>
