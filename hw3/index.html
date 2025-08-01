@@ -340,15 +340,58 @@
 		</code></pre>
 
 		<p>
-		Finally I implemented the ray sphere intersection, Sphere::has_intersection(...) and Sphere::intersect(...). 
-		For any point p on a sphere's surface, the following equation is satisfied.
-		(p - c)^2 - R^2 = 0 where c is the center of the sphere and R is the radius. Using this we can substitue r(t) for p.
-		We get (o + t d - c)^2 - R^2 = 0. If we expand this expression and analyze it as a quadratic at2 + bt + c = 0 we obtain the following coefficients.
-		a = d · d
-		b = 2(o - c) · d
-		c = (o - c) · (o - c) - R
-		Finally we can solve for t simply by using the quadratic formula. 
+		Finally I implemented the ray-sphere intersection: <code>Sphere::has_intersection(...)</code> and <code>Sphere::intersect(...)</code>.  
+		For any point \( \mathbf{p} \) on a sphere's surface, the following equation is satisfied:
 		</p>
+
+		<p style="text-align: center;">
+		\( (\mathbf{p} - \mathbf{c})^2 - R^2 = 0 \)
+		</p>
+
+		<p>
+		where \( \mathbf{c} \) is the center of the sphere and \( R \) is its radius.  
+		Substituting the ray equation \( \mathbf{r}(t) = \mathbf{o} + t \mathbf{d} \) for \( \mathbf{p} \), we get:
+		</p>
+
+		<p style="text-align: center;">
+		\( (\mathbf{o} + t\mathbf{d} - \mathbf{c})^2 - R^2 = 0 \)
+		</p>
+
+		<p>
+		Expanding and simplifying gives a quadratic in \( t \):
+		</p>
+
+		<p style="text-align: center;">
+		\( at^2 + bt + c = 0 \)
+		</p>
+
+		<p>
+		with coefficients:
+		</p>
+
+		<ul>
+		<li>\( a = \mathbf{d} \cdot \mathbf{d} \)</li>
+		<li>\( b = 2(\mathbf{o} - \mathbf{c}) \cdot \mathbf{d} \)</li>
+		<li>\( c = (\mathbf{o} - \mathbf{c}) \cdot (\mathbf{o} - \mathbf{c}) - R^2 \)</li>
+		</ul>
+
+		<p>
+		Finally, solve for \( t \) using the quadratic formula.
+		</p>
+
+
+		<div style="display: flex; gap: 20px; justify-content: center; align-items: flex-start;">
+		<div style="text-align: center;">
+
+		<img src="part1-banana.png" alt="Description 1" style="max-width: 100%; height: auto; width: 400px;">
+		<p><strong>Figure 1:</strong> banana.dae</p>
+		</div>
+		<div style="text-align: center;">
+		<img src="part1-CBempty-before-task-3.png" alt="Description 2" style="max-width: 100%; height: auto; width: 400px;">
+		<p><strong>Figure 2:</strong> CBempty.dae</p>
+		</div>
+		</div>
+
 		
 		<h2>Part 2: Bounding Volume Hierarchy</h2>
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
@@ -357,36 +400,267 @@
 		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 		<h2>Part 4: Global Illumination</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		In this part we are tasked with implementing indirect lighting via Russian Roulette.
+		As previously seen in part 3, direct lighting refers to light that travels from a light source to the surface directly without bouncing off any other surface.
+		This was computed via the one_bounce_radiance() function.
+		Indirect lighting is lighting that arrives at a point after bouncing one or more times off surfaces after originating from a light.
+		<table border="1" cellpadding="8" cellspacing="0">
+		<thead>
+			<tr>
+			<th>Type</th>
+			<th>Bounce Count</th>
+			<th>Source</th>
+			<th>Visibility Required</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+			<td>Emission</td>
+			<td>0</td>
+			<td>Hit light directly</td>
+			<td>Yes</td>
+			</tr>
+			<tr>
+			<td>Direct lighting</td>
+			<td>1</td>
+			<td>From light</td>
+			<td>Yes (not occluded)</td>
+			</tr>
+			<tr>
+			<td>Indirect lighting</td>
+			<td>≥2</td>
+			<td>From scene</td>
+			<td>Indirectly via paths</td>
+			</tr>
+		</tbody>
+		</table>
+		The function at_least_one_bounce_radiance(const Ray& r, const Intersection& isect) implements  recursive light integration for indirect lighting, augmenting it with direct lighting and Russian roulette for termination.
+		The following steps are implemented:
+		
+<ul>
+		<li>Construct a local coordinate frame at the intersection point using the surface normal</li>
+		<li>Compute the outgoing direction \( w_{\text{out}} \) in local coordinates</li>
+		<li>If <code>isAccumBounces</code> is true, always add direct lighting via <code>one_bounce_radiance()</code>; otherwise, add it only at the final bounce</li>
+		<li>Check for base case: if <code>r.depth &le; 0</code>, terminate recursion and return <code>L_out</code></li>
+		<li>Apply Russian roulette: terminate the path with probability \( 1 - p \), where <code>p = 0.65</code></li>
+		<li>Sample a random incoming direction \( w_{\text{in}} \) and BSDF value \( f_r \) using <code>sample_f()</code>; get PDF of the sample</li>
+		<li>Transform \( w_{\text{in}} \) to world space and spawn a new ray in that direction</li>
+		<li>Intersect the new ray with the scene geometry</li>
+		<li>If an intersection occurs:
+			<ul>
+			<li>Recursively compute indirect lighting at the new intersection point</li>
+			<li>Weight the incoming light using the Monte Carlo estimator:<br>
+				<code>fr * cos(θ) * L_indirect / (pdf * continuation)</code></li>
+			<li>Accumulate the weighted result into <code>L_out</code></li>
+			</ul>
+		</li>
+		<li>Return the total radiance <code>L_out</code></li>
+		</ul>
+
+
+		Depending on whether or not isAccumBounces is true, we either integrate light at every bounce or only at max_ray_depth.
+		<pre><code>
+		if (isAccumBounces)
+			L_out += one_bounce_radiance(r, isect);
+		else
+		{
+			if (max_ray_depth - r.depth + 1 == max_ray_depth)
+				L_out += one_bounce_radiance(r, isect);
+		}
+		</code></pre>
+
+		Next the sampling function sample_f() is used to implement importance sampling utilizing the BSDF at intersection point p.
+		w_out is the outgoing direction of light traveling from point p to the camera, or in recursive calls traveling from p' to p.
+		w_in is a sampled incoming light direction used to ray trace to the next bounce computed.
+		pdf is the probability density function value for the sampled direction w_in, p(w_in).
+		<pre><code>
+		Vector3D w_in;
+		double pdf;
+		Vector3D bsdf_sample = isect.bsdf->sample_f(w_out, &w_in, &pdf);
+		if (pdf == 0.0) return L_out;
+		</code></pre>
+
+		Next we can recursively compute the lighting equation.
+		<p>
+		<b>Indirect Lighting Estimator:</b><br>
+		\[
+			L_{\text{indirect}} = \frac{f_r \cdot \cos\theta \cdot L_{\text{child}}}{p \cdot q}
+		\]
+		</p>
+		<pre><code>
+		Intersection new_isect;
+		if (bvh->intersect(new_ray, &new_isect))
+		{
+			Vector3D indirect_L = at_least_one_bounce_radiance(new_ray, new_isect);
+			double cos_theta = w_in.z;
+			if (cos_theta > 0 && pdf > 0)
+				L_out += bsdf_sample * cos_theta * indirect_L / (pdf * continuation);
+		}
+		</code></pre>
+
+		Russian Roulette  is a probabilistic ray termination method. Instead of letting all rays recursive until max depth,
+		we instead decide whether to terminate the ray at each step based on a continuation probability.
+		We must also divide L_out by the continuation probabiliy as indicated above to preserve unbiased behavior (as indicated above)
+		<p>
+		If you randomly decide to:
+		</p>
+		<ul>
+		<li><strong>Terminate</strong> with probability \( 1 - p \): return 0</li>
+		<li><strong>Continue</strong> with probability \( p \): return \( \frac{f(x)}{p} \)</li>
+		</ul>
+		<p>
+		Then the expected value is:
+		</p>
+		<p>
+		\[
+		\mathbb{E}[X] = (1 - p) \cdot 0 + p \cdot \left( \frac{f(x)}{p} \right) = f(x)
+		\]
+		</p>
+
+		<pre><code>
+		// Stop recursion if we've reached depth 0
+		if (r.depth <= 0) return L_out;
+
+		// Russian Roulette termination (apply to all bounces, or after a minimum depth)
+		const double continuation = 0.65;
+		if (!coin_flip(continuation)) return L_out;
+		</code></pre>
+
+
 
 		<h2>Part 5: Adaptive Sampling</h2>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+		Some pixels in a scene convergence faster or slower during monte carlo light transport integration. This is governed by the variance of the function being integrated.
+		Variance of a sample point is determined by scene complexity. For example a point that lies on the boundry of a shadow will have high variance because
+		a variety of rays with different radiance arrive at that point. Compare this to a fully lit area where most rays arriving at that point will have high radiance.
 
+		<h3>Mathematical Reason</h3>
+		<p>
+		Let \( \hat{I}_n \) be the Monte Carlo estimator with \( n \) samples:
+		</p>
+		<p>
+		\[
+		\text{Var}[\hat{I}_n] = \frac{\sigma^2}{n}
+		\]
+		</p>
+		<ul>
+		<li><strong>Low</strong> \( \sigma^2 \): few samples needed to reduce error</li>
+		<li><strong>High</strong> \( \sigma^2 \): many samples required</li>
+		</ul>
+		<p>
+		Pixels with lower \( \sigma^2 \) (i.e., less noise in sampled radiance) converge faster to the true value.
+		</p>
+
+		<p>
+		Let \( x_k \) be the illuminance of the \( k \)-th sample. We track:
+		</p>
+
+		<ul>
+		<li>\( s_1 = \sum_{k=1}^{n} x_k \) &nbsp; (sum of samples)</li>
+		<li>\( s_2 = \sum_{k=1}^{n} x_k^2 \) &nbsp; (sum of squares)</li>
+		</ul>
+
+		<p>
+		From this we compute:
+		</p>
+
+		<p><strong>Mean:</strong></p>
+		<p>
+		\[
+		\mu = \frac{s_1}{n}
+		\]
+
+		<p><strong>Variance:</strong></p>
+		<p>
+		\[
+		\sigma^2 = \frac{1}{n - 1} \left( s_2 - \frac{s_1^2}{n} \right)
+		\]
+		</p>
+
+		<p>
+		To measure convergence, we define a confidence interval on the sample mean using the sample variance and sample count:
+		</p>
+		<p>
+		\[
+		I = 1.96 \cdot \frac{\sigma}{\sqrt{n}}
+		\]
+		</p>
+		<p>
+		where:
+		</p>
+		<ul>
+		<li>\( \sigma \): standard deviation of illuminance</li>
+		<li>\( n \): number of samples traced so far</li>
+		</ul>
+
+		<p>
+		With 95% confidence, the true mean illuminance lies within:
+		</p>
+		<p>
+		\[
+		\mu \pm I = \left[ \mu - 1.96 \cdot \frac{\sigma}{\sqrt{n}}, \; \mu + 1.96 \cdot \frac{\sigma}{\sqrt{n}} \right]
+		\]
+		</p>
+		<p>
+		This means there is a 95% probability that the actual average illuminance falls within this range given the observed variance.
+		</p>
+
+		<p>
+		To determine convergence, we use the criterion:
+		</p>
+		<p>
+		\[
+		I \leq \text{maxTolerance} \cdot \mu
+		\]
+		</p>
+		<p>
+		If this holds true, we assume the pixel has sufficiently converged and terminate further sampling. 
+		By default, <code>maxTolerance = 0.05</code>.
+		</p>
+
+		<p>
+		Intuitively, \( I \) is small only when the samples’ variance \( \sigma^2 \) is small, 
+		or the number of samples \( n \) is large enough. 
+		So, the smaller \( I \) is, the more confidently we can conclude that the pixel has converged.
+		</p>
+
+		<pre><code>
+		void PathTracer::raytrace_pixel(size_t x, size_t y) {
+
+		int num_samples = ns_aa;
+		Vector3D sum(0.0, 0.0, 0.0);
+
+		int n = 0;
+		double s1 = 0;
+		double s2 = 0;
 		
-		<div style="display: flex; flex-direction: column; align-items: center;">
-		<table style="width: 100%; text-align: center; border-collapse: collapse;">
-		<tr>
-		<td style="text-align: center;">
-		<img src="cornell.png" width="400px"/>
-		<figcaption>Caption goes here.</figcaption>
-		</td>
-		<td style="text-align: center;">
-		<img src="cornell.png" width="400px"/>
-		<figcaption>Caption goes here.</figcaption>
-		</td>
-		</tr>
-		<tr>
-		<td style="text-align: center;">
-		<img src="cornell.png" width="400px"/>
-		<figcaption>Caption goes here.</figcaption>
-		</td>
-		<td style="text-align: center;">
-		<img src="cornell.png" width="400px"/>
-		<figcaption>Caption goes here.</figcaption>
-		</td>
-		</tr>
-		</table>
-		</div>
+		while (n < num_samples) {
+			double x_norm = (x + gridSampler->get_sample().x) / sampleBuffer.w;
+			double y_norm = (y + gridSampler->get_sample().y) / sampleBuffer.h;
+			Ray ray = camera->generate_ray(x_norm, y_norm);
+			ray.depth = max_ray_depth;
+			Vector3D radiance = est_radiance_global_illumination(ray);
+			sum += radiance;
+
+			n += 1;
+			double illuminance = radiance.illum();
+			s1 += illuminance;
+			s2 += illuminance * illuminance;
+
+			if (n % samplesPerBatch == 0 && n > 1) {
+				double mean = s1 / n;
+				double variance = (s2 - ((s1 * s1) / n)) / (n - 1);
+				double I = 1.96 * sqrt(variance / n);
+				if (I <= maxTolerance * mean) {
+					break;
+				}
+			}
+		}
+		
+		sum = sum / n;
+		sampleBuffer.update_pixel(sum, x, y);
+		sampleCountBuffer[x + y * sampleBuffer.w] = n;
+		}
+		</code></pre>
 
 		</div>
 	</body>
