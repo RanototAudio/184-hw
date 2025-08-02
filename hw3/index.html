@@ -419,7 +419,7 @@
 		<p>The same calculations are performed for the \(y\)-axis and \(z\)-axis, and the intersection of the resulting intervals is calculated as below. For the ray from time \(t_0\) to time \(t_1\), the final intersection interval is \([t_{0}', t_{1}']\) where</p>
 		\[
 		t_{0}' = \max(t_{0}, t_{x0}, t_{y0}, t_{z0}) \\
-		t_{1}' = \min(t_{1}, t_{x0}, t_{y0}, t_{z0})
+		t_{1}' = \min(t_{1}, t_{x1}, t_{y1}, t_{z1})
 		\]
 
 		<p>If the result is an empty interval, then the ray and the bounding box do not intersect. To check for the empty interval, check if \(t_{0}' &gt; t_{1}'\).</p>
